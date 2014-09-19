@@ -1,0 +1,26 @@
+{
+  "name": "stream-fusion",
+  "version": "0.0.0",
+  "description": "Fuse multiple streams together based on some field and a transformation function",
+  "main": "fusion.js",
+  "dependencies": {
+    "CBuffer": "git://github.com/megawac/cbuffer.git#slice2",
+    "underscore": "1.7.0"
+  },
+  "devDependencies": {
+    "highland": "~1.27.1",
+    "prova": "^1.14.0"
+  },
+  "scripts": {
+    "test": "jshint *.js && prova test/**/*.js"
+  },
+  "keywords": [
+    "stream",
+    "stream fusion",
+    "fusion",
+    "mix",
+    "mixing",
+    "mixer"
+  ],
+  "author": "megawac <github.com/megawac>"
+}
