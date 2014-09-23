@@ -1,3 +1,5 @@
 {
-	"eqnull": true
+    "eqnull": true,
+    "node": true,
+    "newcap": false
 }

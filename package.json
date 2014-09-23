@@ -9,10 +9,11 @@
   },
   "devDependencies": {
     "highland": "~1.27.1",
+    "jshint": "^2.5.6",
     "prova": "^1.14.0"
   },
   "scripts": {
-    "test": "jshint *.js && prova test/**/*.js"
+    "test": "jshint fusion.js && prova test/**/*.js"
   },
   "keywords": [
     "stream",
