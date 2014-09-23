@@ -5,6 +5,7 @@ var _ = require("underscore");
 var CBuffer = require("CBuffer");
 var utils = require("util");
 var assert = require("assert");
+var logging = require("logging").from("stream-fusion");
 
 /**
  * Docs Docs Docs
@@ -43,6 +44,12 @@ function Fusa( /* **streams, [options] */ ) {
     for (var index = 0; index < streams.length; index++) {
         this.addStream(streams[index]);
     }
+
+    _.defer(function transposerWarning(fusa) {
+        if (fusa.transposer === Fusa.prototype.transposer) {
+            logging("Note: you probably should reimplement the base transposer");
+        }
+    }, this);
 }
 
 utils.inherits(Fusa, TransformStream);

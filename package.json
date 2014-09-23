@@ -5,7 +5,8 @@
   "main": "fusion.js",
   "dependencies": {
     "CBuffer": "git://github.com/megawac/cbuffer.git#slice2",
-    "underscore": "1.7.0"
+    "underscore": "1.7.0",
+    "logging": "~2.0.21"
   },
   "devDependencies": {
     "highland": "~1.27.1",

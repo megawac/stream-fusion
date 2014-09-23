@@ -1,5 +1,6 @@
 {
     "eqnull": true,
     "node": true,
-    "newcap": false
+    "newcap": false,
+    "quotmark": "double"
 }
