@@ -7,6 +7,8 @@ var nextItem = require("./utils").nextItem;
 var pipeItemsAtFreq = require("./utils").pipeItemsAtFreq;
 
 test("basic (out of sync) direct fusion", function(t) {
+    t.plan(10);
+
     var xtimestamps = _.times(5, nextItem);
     var x = hl(_.map(xtimestamps, _.clone));
 
@@ -44,8 +46,10 @@ test("basic (out of sync) direct fusion", function(t) {
 });
 
 test("transpose on window length 1", function(t) {
+    t.plan(8);
+
     var x = hl(_.times(5, nextItem));
-    var y = pipeItemsAtFreq(_.times(7, nextItem), 100);
+    var y = pipeItemsAtFreq(_.times(7, nextItem), 20);
 
     var mixed = new Fusa({
         stream: x,
@@ -59,9 +63,9 @@ test("transpose on window length 1", function(t) {
     });
 
     var data = [];
-    mixed.transposer = function(streams) {
+    mixed.transform = function(streams) {
         data.push(streams);
-        return streams;
+        this.push(streams);
     };
     mixed.on("data", function(streams) {
         t.deepEqual(streams, data[data.length - 1]);
@@ -80,9 +84,11 @@ test("transpose on window length 1", function(t) {
     });
 });
 
-test("returning false from transposer does not include the value", function(t) {
+test("not publishing in the transform does not publish the value to the stream", function(t) {
+    t.plan(5);
+
     var x = hl(_.times(5, nextItem));
-    var y = pipeItemsAtFreq(_.times(7, nextItem), 100);
+    var y = pipeItemsAtFreq(_.times(7, nextItem), 15);
 
     var mixed = new Fusa({
         stream: x,
@@ -96,12 +102,11 @@ test("returning false from transposer does not include the value", function(t) {
     });
 
     var data = [];
-    mixed.transposer = function(streams) {
+    mixed.transform = function(streams) {
         if (streams[0][0].data !== 4) {
             data.push(streams);
-            return streams;
-        }
-        return false;        
+            this.push(streams);
+        }  
     };
     mixed.on("data", function(streams) {
         t.deepEqual(streams, data[data.length - 1]);
@@ -113,6 +118,40 @@ test("returning false from transposer does not include the value", function(t) {
             [[nextItem(2)], [nextItem(2)]],
             [[nextItem(3)], [nextItem(3)]]
         ]);
+        t.end();
+    });
+});
+
+test("can publish multiple items", function(t) {
+    t.plan(1);
+
+    var x = hl(_.times(5, nextItem));
+    var y = pipeItemsAtFreq(_.times(7, nextItem), 4);
+
+    var mixed = new Fusa({
+        stream: x,
+        key: "timestamp"
+    }, {
+        stream: y,
+        key: "timestamp",
+        check: true
+    }, {
+        buffer: 1
+    });
+
+    var data = [];
+    mixed.transform = function(streams) {
+        if (streams[0][0].data <= 2) {
+            this.push(1);
+            this.push(2);
+            this.push(3);
+        }
+    };
+    mixed.on("data", function(x) {
+        data.push(x);
+    });
+    mixed.on("finish", function() {
+        t.deepEqual(data, [1, 2, 3, 1, 2, 3, 1, 2, 3]);
         t.end();
     });
 });

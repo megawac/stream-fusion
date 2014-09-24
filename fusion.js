@@ -1,10 +1,15 @@
 "use strict";
 
 var TransformStream = require("stream").Transform;
-var _ = require("underscore");
-var CBuffer = require("CBuffer");
 var utils = require("util");
 var assert = require("assert");
+
+// @TODO: Switch to offical version after the following are merged
+//     - https://github.com/trevnorris/cbuffer/pull/14
+//     - https://github.com/trevnorris/cbuffer/pull/15
+//     - https://github.com/trevnorris/cbuffer/pull/17
+var CBuffer = require("CBuffer");
+var _ = require("underscore");
 var logging = require("logging").from("stream-fusion");
 
 /**
@@ -27,13 +32,12 @@ function Fusa( /* **streams, [options] */ ) {
 
     TransformStream.call(this, options);
 
-    if (options.transposer) {
-        this.transposer = options.transposer;
+    if (options.transform) {
+        this.transform = options.transform;
     }
 
     this._streams = [];
     this._closed = 0;
-    this.objectMode = !!options.objectMode;
     this.bufferLength = +options.bufferLength;
     this.bufferWindow = +options.buffer;
     this._maxRechecks = options.maxRechecks != null ? +options.maxRechecks : this.bufferWindow;
@@ -46,8 +50,8 @@ function Fusa( /* **streams, [options] */ ) {
     }
 
     _.defer(function transposerWarning(fusa) {
-        if (fusa.transposer === Fusa.prototype.transposer) {
-            logging("Note: you probably should reimplement the base transposer");
+        if (fusa.transform === Fusa.prototype.transform) {
+            logging("Note: you probably should reimplement the base transform");
         }
     }, this);
 }
@@ -56,8 +60,6 @@ utils.inherits(Fusa, TransformStream);
 
 /**
  * Add a stream to the watched items.
- *
- *
  */
 Fusa.prototype.addStream = function(stream) {
     assert(_.has(stream, "stream"), "A `stream` property must be set");
@@ -114,10 +116,7 @@ Fusa.prototype.addStream = function(stream) {
                 streamData[index] = currentStream.buffer.slice(sidx - buffer, sidx + buffer - 1);
             }
             streamData[thisIndex] = [data];
-            var computed = self.transposer(streamData);
-            if (computed !== false) {
-                self.push(computed);
-            }
+            self.transform(streamData);
         };
     }
 
@@ -145,32 +144,41 @@ Fusa.prototype.addStream = function(stream) {
 };
 
 /**
- * Base transposer. Aggregates stream data in an array
+ * Base transform. Aggregates stream data in an array
  * Supports streams that produce Objects and Arrays
  */
-Fusa.prototype.transposer = function baseTransposer(streamData) {
-    var transposed = [];
-    for (var i = 0, length = streamData.length; i < length; i++) {
-        transposed.push(streamData[i][Math.min(streamData[i].length, this.bufferWindow) - 1]);
+Fusa.prototype.transform = function baseTransposer(streamData) {
+    var window = this.bufferWindow;
+    this.push(_.map(streamData, function(data) {
+        return data[Math.min(data.length, window) - 1];
+    }));
+};
+
+// Fusa.prototype.resume = function() {
+//     _.chain(this._streams).pluck("stream").invoke("resume");
+//     return TransformStream.prototype.resume.call(this);
+// };
+
+// Fusa.prototype.pause = function() {
+//     _.chain(this._streams).pluck("stream").invoke("pause");
+//     return TransformStream.prototype.pause.call(this);
+// };
+
+// Defer temporarily in case theres about to be something written
+// Docs claim this shouldn't be necessary (http://nodejs.org/api/stream.html#stream_events_finish_and_end)
+// but couldn't get it working without some logic here :/
+// Alternatively we can pause all the streams being observed (uncomment lines above)
+function endAfterDeque(stream) {
+    if (stream._readableState.buffer.length) {
+        _.defer(endAfterDeque, stream);
+    } else {
+        stream._streams = null;
+        return TransformStream.prototype.end.call(stream);
     }
-    return transposed;
-};
-
-Fusa.prototype.resume = function() {
-    console.warn("todo: resume");
-    // _.chain(this._streams).pluck("stream").invoke("resume");
-    return TransformStream.prototype.resume.call(this);
-};
-
-Fusa.prototype.pause = function() {
-    console.warn("todo: pause");
-    // _.chain(this._streams).pluck("stream").invoke("pause");
-    return TransformStream.prototype.pause.call(this);
-};
+}
 
 Fusa.prototype.end = function() {
-    this._streams = null;
-    TransformStream.prototype.end.call(this);
+    return endAfterDeque(this);
 };
 
 module.exports = Fusa;

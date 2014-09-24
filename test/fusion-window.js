@@ -6,6 +6,8 @@ var nextItem = require("./utils").nextItem;
 var pipeItemsAtFreq = require("./utils").pipeItemsAtFreq;
 
 test("fusion of streams with a set fixed window", function(t) {
+    t.plan(2);
+
     var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8, 11, 13, 14, 17, 20, 22,
         24, 27, 31
     ], nextItem), 140);
@@ -41,7 +43,9 @@ test("fusion of streams with a set fixed window", function(t) {
     });
 });
 
-test("transposer with a fixed window", function(t) {
+test("transform with a fixed window", function(t) {
+    t.plan(1);
+
     var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
     var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 135);
 
@@ -59,11 +63,11 @@ test("transposer with a fixed window", function(t) {
 
     var data = [];
     // do something weird/stupid
-    mixed.transposer = function(streams) {
+    mixed.transform = function(streams) {
         var stream0 = streams[0],
             stream1 = streams[1];
         data.push([stream0[0], stream1[4]]);
-        return data[data.length - 1];
+        this.push(data[data.length - 1]);
     };
 
     mixed.on("data", function() {});
