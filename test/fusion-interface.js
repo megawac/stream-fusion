@@ -1,6 +1,10 @@
 var test = require("prova");
 var Fusa = require("..");
+var _ = require("underscore");
 var hl = require("highland");
+
+var nextItem = require("./utils").nextItem;
+var pipeItemsAtFreq = require("./utils").pipeItemsAtFreq;
 
 // prova throws seems broken
 function throws(t, fn) {
@@ -9,13 +13,6 @@ function throws(t, fn) {
         return fn.apply(null, args);
     }, args);
 }
-
-test("Supports standard stream interface stubs", function(t) {
-
-
-
-    t.end();
-});
 
 test("Throws an exception if its in an obviously invalid state", function(t) {
 
@@ -52,3 +49,44 @@ test("Throws an exception if its in an obviously invalid state", function(t) {
 
     t.end();
 });
+
+
+test("can pause and resume the stream", function(t) {
+    t.plan(1);
+
+    var x = hl(_.times(5, nextItem));
+    var y = pipeItemsAtFreq(_.times(7, nextItem), 4);
+
+    var mixed = new Fusa({
+        stream: x,
+        key: "timestamp"
+    }, {
+        stream: y,
+        key: "timestamp",
+        check: true
+    }, {
+        buffer: 1
+    });
+
+    mixed.transform = function(stream) {
+        this.push(stream[0][0].data);
+    };
+
+    var paused = true;
+    var data = [];
+    mixed.pause();
+    mixed.on("data", function(x) {
+        if (paused) t.ok(false, "Should not emit data while paused");
+        else data.push(x);
+    });
+    mixed.on("finish", function() {
+        t.deepEqual(data, [0, 1, 2, 3, 4, 4, 4]);
+        t.end();
+    });
+
+    _.delay(function() {
+        paused = false;
+        mixed.resume();
+    }, 500);
+});
+
