@@ -14,7 +14,7 @@
     "prova": "^1.14.0"
   },
   "scripts": {
-    "test": "jshint fusion.js && prova test/**/*.js"
+    "test": "jshint fusion.js && prova test/**/*.js --progress"
   },
   "keywords": [
     "stream",

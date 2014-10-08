@@ -1,4 +1,4 @@
-Stream-Fusion
+Stream-Fusion [![](https://magnum.travis-ci.com/megawac/stream-fusion.svg?token=oSwrxUEG4V38qpMqB1xp)](https://magnum.travis-ci.com/megawac/stream-fusion)
 ==========
 
 Relationally join streams.
@@ -6,6 +6,8 @@ Relationally join streams.
 ## Use case
 
 [Sensor fusion](http://en.wikipedia.org/wiki/Sensor_fusion) - combining multiple streams of timestamped sensor data.
+
+Terrible documentation incoming...
 
 ## Contract and usage
 
