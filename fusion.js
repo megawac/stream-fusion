@@ -84,7 +84,6 @@ Fusa.prototype.addStream = function(stream) {
         if (++self._closed >= self._streams.length) {
             self.end();
         }
-        context = null;
     }
 
     if (stream.check) {
