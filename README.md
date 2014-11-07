@@ -52,6 +52,27 @@ By default (in the case that stream 1 is the stream being checked) it will be ca
 
 The fused stream is simply a [`Node.js Stream`](http://nodejs.org/api/stream.html) and should be used as such
 
+# Algorithm
+
+I spent a good amount of time developing an optimal algorithm for processing this problem, while still leaving a powerful and flexible API. Under the hood, we leverage many of the features of the [Node stream API](http://nodejs.org/api/stream.html), [circular lists](https://github.com/megawac/cbuffer)
+
+- Create a circular list of length `bufferLength` for each provided list
+- Start listening for data from each stream or finished events on each stream
+
+#### Non watched streams new data
+- Append an item to the corresponding circular buffer
+- Check if any watch streams have data buffered dependent on new messages from this stream. For example if the `buffer` is `3` and the key is based on timestamp, we would have to wait for 2 to 3 (depending if the messages fire on the same millisecond) new messages for enough data to have give a window of 2 items to the right (2 to the left) of the closest value
+    - If there is data being buffered dependent on this stream proceed to the checked stream algorithm
+
+#### Checked stream new data
+- For each stream (besides the one being checked)
+    - Do a [circular binary search](https://github.com/trevnorris/cbuffer/pull/14) to find the index of the comparitively closest value in the streams (sorted) circular buffer. Note: smaller `bufferLength`s will yield fewer the iterations in the search
+    - If there are enough (`buffer` size) items to the left and right of the `index`
+        - Do a circular `slice` on the items `buffer` indexs to the left and right of the `index`
+        - `continue` looping through the streams 
+    - Otherwise enqueue the current data from this stream to be checked later (see above). (Abort)
+- If enough data has been seen from each stream call the `transform` stream with the data in each window
+
 ## Example <sub>(see tests for more examples)</sub>
 
 Using a custom fork of [roslibjs](https://github.com/RobotWebTools/roslibjs)
