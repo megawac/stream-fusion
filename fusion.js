@@ -8,7 +8,7 @@ var assert = require("assert");
 //     - https://github.com/trevnorris/cbuffer/pull/14
 //     - https://github.com/trevnorris/cbuffer/pull/15
 //     - https://github.com/trevnorris/cbuffer/pull/17
-var CBuffer = require("CBuffer");
+var CBuffer = require("CBuffer-fusion");
 var _ = require("underscore");
 var logging = require("logging").from("stream-fusion");
 
@@ -98,13 +98,14 @@ Fusa.prototype.addStream = function(stream) {
             //  [[stream1b4, stream1aft], [stream2b4, stream2aft], [watchedstream]]
             var index = 0, length = self._streams.length;
             var streamData = Array(length);
+            var computedVal = context.getter(data);
             for (; index < length; index++) {
                 if (index === thisIndex) continue;
                 var currentStream = self._streams[index];
                 
                 // Compute the appropriate index of the data via comparitor
                 // @TODO Could avoid looking up if it is obviously out of bounds
-                var sidx = currentStream.buffer.sortedIndex(context.getter(data), currentStream.comparitor);
+                var sidx = currentStream.buffer.sortedIndex(computedVal, currentStream.comparitor);
 
                 // outside of the buffer range. Check again some other time
                 if (sidx < currentStream.bufferLeft ||
