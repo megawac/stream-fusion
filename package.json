@@ -1,10 +1,10 @@
 {
   "name": "stream-fusion",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Fuse multiple streams together based on some field and a transformation function",
   "main": "fusion.js",
   "dependencies": {
-    "CBuffer": "megawac/cbuffer#slice2",
+    "CBuffer": "megawac/cbuffer#fusion",
     "underscore": "jashkenas/underscore",
     "logging": "~2.0.21"
   },
