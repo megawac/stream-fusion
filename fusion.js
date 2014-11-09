@@ -15,7 +15,7 @@ var logging = require("logging").from("stream-fusion");
 /**
  * Docs Docs Docs
  *
- * @param stream*|Array[stream*] streams to fuse
+ * @param stream*|Array[stream config*] streams to fuse
  * @param {Object} [options]
  */
 function Fusa( /* **streams, [options] */ ) {
@@ -71,6 +71,9 @@ Fusa.prototype.addStream = function(stream) {
         // Circular buffer to store stream contents as we receive them
         // Used to match old items
         buffer: new CBuffer(this.bufferLength),
+        bufferLeft: _.result(stream, "bufferLeft", this.bufferWindow),
+        bufferRight: _.result(stream, "bufferRight", this.bufferWindow - 1),
+        maxRechecks: _.result(stream, "maxRechecks", this._maxRechecks),
         comparitor: function(a, b) {
             // >= so equal items are included in the window
             return a >= getter(b) ? 1 : -1;
@@ -92,7 +95,6 @@ Fusa.prototype.addStream = function(stream) {
         context.check = function check(data, recheckAttempts) {
             // will be a multi dimensional array:
             //  [[stream1b4, stream1aft], [stream2b4, stream2aft], [watchedstream]]
-            var buffer = self.bufferWindow;
             var index = 0, length = self._streams.length;
             var streamData = Array(length);
             for (; index < length; index++) {
@@ -102,8 +104,9 @@ Fusa.prototype.addStream = function(stream) {
                 var sidx = currentStream.buffer.sortedIndex(context.getter(data), currentStream.comparitor);
 
                 // outside of the buffer range. Check again some other time
-                if (sidx < buffer || currentStream.buffer.size + 1 < sidx + buffer) {
-                    if (recheckAttempts < self._maxRechecks) {
+                if (sidx < currentStream.bufferLeft ||
+                    currentStream.buffer.size < sidx + currentStream.bufferRight) {
+                    if (recheckAttempts < currentStream.maxRechecks) {
                         currentStream.pendingQueue.push({
                             context: context,
                             data: data,
@@ -112,7 +115,8 @@ Fusa.prototype.addStream = function(stream) {
                     }
                     return;
                 }
-                streamData[index] = currentStream.buffer.slice(sidx - buffer, sidx + buffer - 1);
+                streamData[index] = currentStream.buffer.slice(sidx - currentStream.bufferLeft,
+                                                                sidx + currentStream.bufferRight);
             }
             streamData[thisIndex] = [data];
             self.transform(streamData);
