@@ -68,9 +68,9 @@ Fusa.prototype.addStream = function(stream) {
         // Circular buffer to store stream contents as we receive them
         // Used to match old items and compute buffered windows
         buffer: new CBuffer(_.result(stream, "bufferLength", this.options.bufferLength)),
+        bufferLeft: _.result(stream, "bufferLeft", this.options.buffer),
         // + 1 to account for the current index
-        bufferLeft: _.result(stream, "bufferLeft", this.options.buffer) + 1,
-        bufferRight: _.result(stream, "bufferRight", this.options.buffer),
+        bufferRight: _.result(stream, "bufferRight", this.options.buffer) + 1,
         comparitor: function(a, b) {
             // >= so equal items are included in the window
             var computed = getter(b);
@@ -161,7 +161,7 @@ Fusa.prototype.addStream = function(stream) {
 Fusa.prototype.transform = function baseTransposer(streamData) {
     var streams = this._streams;
     this.push(_.map(streamData, function(data, index) {
-        return data[Math.min(data.length, streams[index].bufferLeft) - 1];
+        return data[Math.min(data.length - 1, streams[index].bufferLeft)];
     }));
 };
 
@@ -173,7 +173,7 @@ function endAfterDeque(stream) {
     if (stream._readableState.buffer.length) {
         _.defer(endAfterDeque, stream);
     } else {
-        stream._streams = null;
+        stream._streams = stream.options = null;
         TransformStream.prototype.end.call(stream);
     }
     return stream;

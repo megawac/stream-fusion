@@ -1,3 +1,5 @@
+"use strict";
+
 var test = require('prova');
 var Fusa = require("..");
 var _ = require("underscore");
@@ -33,12 +35,15 @@ test("transform with a fixed left of 2 and right window of 0", function(t) {
         t.deepEqual(data, [
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
+            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}]
         ]);
 
         t.end();
     });
 });
+
+
 
 
 test("transform with a fixed left of 2 and right window of 1", function(t) {
@@ -70,6 +75,7 @@ test("transform with a fixed left of 2 and right window of 1", function(t) {
     mixed.on("finish", function() {
         t.deepEqual(data, [
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
+            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}]
         ]);
@@ -108,6 +114,7 @@ test("transform with a fixed left and right window of 2", function(t) {
         t.deepEqual(data, [
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
+            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
         ]);
 
@@ -142,13 +149,14 @@ test("transform with a fixed left of 0 and right window of 2", function(t) {
     mixed.on("data", function() {});
     mixed.on("finish", function() {
         t.deepEqual(data, [
-            [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
             [{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
+            [{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
         ]);
+
         t.end();
     });
 });
@@ -183,6 +191,7 @@ test("transform with a fixed left of 1 and right window of 2", function(t) {
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
+            [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
         ]);
