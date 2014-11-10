@@ -30,7 +30,7 @@ test("basic (out of sync) direct fusion", function(t) {
         },
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -59,7 +59,7 @@ test("transpose on window length 1", function(t) {
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -98,7 +98,7 @@ test("not publishing in the transform does not publish the value to the stream",
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -136,7 +136,7 @@ test("can publish multiple items", function(t) {
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];

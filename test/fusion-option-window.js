@@ -21,7 +21,7 @@ test("fusion of streams with a set fixed window", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 3,
+        buffer: 2,
         bufferLength: 20
     });
 
@@ -39,6 +39,7 @@ test("fusion of streams with a set fixed window", function(t) {
             [nextItem(13), nextItem(12)],
             [nextItem(14), nextItem(14)]
         ]);
+
         t.end();
     });
 });
@@ -57,7 +58,7 @@ test("transform with a fixed window", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 3,
+        buffer: 2,
         bufferLength: 20
     });
 
@@ -82,7 +83,7 @@ test("transform with a fixed window", function(t) {
 });
 
 
-test("transform with a fixed window of 4", function(t) {
+test("transform with a buffer window of 3", function(t) {
     t.plan(1);
 
     var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
@@ -96,7 +97,7 @@ test("transform with a fixed window of 4", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 4,
+        buffer: 3,
         bufferLength: 30
     });
 
@@ -119,7 +120,7 @@ test("transform with a fixed window of 4", function(t) {
     });
 });
 
-test("transform with a fixed window of 2", function(t) {
+test("transform with a buffer window of 1", function(t) {
     t.plan(1);
 
     var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
@@ -133,7 +134,7 @@ test("transform with a fixed window of 2", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 2,
+        buffer: 1,
         bufferLength: 30
     });
 
@@ -157,7 +158,7 @@ test("transform with a fixed window of 2", function(t) {
     });
 });
 
-test("transform with a fixed window of 3", function(t) {
+test("transform with a buffer window of 2", function(t) {
     t.plan(1);
 
     var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
@@ -171,7 +172,7 @@ test("transform with a fixed window of 3", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 3,
+        buffer: 2,
         bufferLength: 30
     });
 

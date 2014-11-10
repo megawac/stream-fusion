@@ -4,8 +4,8 @@
   "description": "Fuse multiple streams together based on some field and a transformation function",
   "main": "fusion.js",
   "dependencies": {
-    "CBuffer": "megawac/cbuffer#fusion",
-    "underscore": "jashkenas/underscore",
+    "CBuffer": "git+https://github.com/megawac/cbuffer#fusion",
+    "underscore": "git+https://github.com/jashkenas/underscore",
     "logging": "~2.0.21"
   },
   "devDependencies": {
@@ -24,5 +24,17 @@
     "mixing",
     "mixer"
   ],
-  "author": "megawac <github.com/megawac>"
+  "author": "megawac <github.com/megawac>",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/megawac/stream-fusion.git"
+  },
+  "license": "MPL",
+  "bugs": {
+    "url": "https://github.com/megawac/stream-fusion/issues"
+  },
+  "homepage": "https://github.com/megawac/stream-fusion"
 }

@@ -64,8 +64,6 @@ test("can pause and resume the stream", function(t) {
         stream: y,
         key: "timestamp",
         check: true
-    }, {
-        buffer: 1
     });
 
     mixed.transform = function(stream) {

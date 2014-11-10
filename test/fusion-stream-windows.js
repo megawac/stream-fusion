@@ -19,7 +19,7 @@ test("transform with a fixed left and right window of 2", function(t) {
         stream: y,
         key: "timestamp",
         bufferLeft: 2,
-        bufferRight: 1
+        bufferRight: 2
     }, {
         bufferLength: 30
     });
@@ -38,6 +38,7 @@ test("transform with a fixed left and right window of 2", function(t) {
             [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
         ]);
+
         t.end();
     });
 });
