@@ -20,8 +20,6 @@ test("transform with a fixed left of 2 and right window of 0", function(t) {
         key: "timestamp",
         bufferLeft: 2,
         bufferRight: 0
-    }, {
-        bufferLength: 30
     });
 
     var data = [];
@@ -59,8 +57,6 @@ test("transform with a fixed left of 2 and right window of 1", function(t) {
         // same as buffer: 2 in options
         bufferLeft: 2,
         bufferRight: 1
-    }, {
-        bufferLength: 30
     });
 
     var data = [];
@@ -98,8 +94,6 @@ test("transform with a fixed left and right window of 2", function(t) {
         // same as buffer: 2 in options
         bufferLeft: 2,
         bufferRight: 2
-    }, {
-        bufferLength: 30
     });
 
     var data = [];
@@ -137,8 +131,6 @@ test("transform with a fixed left of 0 and right window of 2", function(t) {
         // same as buffer: 2 in options
         bufferLeft: 0,
         bufferRight: 2
-    }, {
-        bufferLength: 30
     });
 
     var data = [];
@@ -177,8 +169,6 @@ test("transform with a fixed left of 1 and right window of 2", function(t) {
         // same as buffer: 2 in options
         bufferLeft: 1,
         bufferRight: 2
-    }, {
-        bufferLength: 30
     });
 
     var data = [];
@@ -192,7 +182,7 @@ test("transform with a fixed left of 1 and right window of 2", function(t) {
         t.deepEqual(data, [
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
             [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
-            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":4,"timestamp":30},{"data":8,"timestamp":40}],
+            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
             [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
             [{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
         ]);

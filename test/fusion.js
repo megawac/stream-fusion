@@ -80,6 +80,7 @@ test("transpose on window length 1", function(t) {
             [[nextItem(4)], [nextItem(5)]],
             [[nextItem(4)], [nextItem(6)]]
         ]);
+
         t.end();
     });
 });
