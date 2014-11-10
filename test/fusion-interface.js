@@ -1,3 +1,5 @@
+"use strict";
+
 var test = require("prova");
 var Fusa = require("..");
 var _ = require("underscore");
@@ -78,7 +80,7 @@ test("can pause and resume the stream", function(t) {
         else data.push(x);
     });
     mixed.on("finish", function() {
-        t.deepEqual(data, [0, 1, 2, 3, 4, 4, 4]);
+        t.deepEqual(data, [0, 1, 2, 3, 4]);
         t.end();
     });
 
