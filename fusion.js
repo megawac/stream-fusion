@@ -8,14 +8,14 @@ var assert = require("assert");
 //     - https://github.com/trevnorris/cbuffer/pull/14
 //     - https://github.com/trevnorris/cbuffer/pull/15
 //     - https://github.com/trevnorris/cbuffer/pull/17
-var CBuffer = require("CBuffer");
+var CBuffer = require("CBuffer-fusion");
 var _ = require("underscore");
 var logging = require("logging").from("stream-fusion");
 
 /**
  * Docs Docs Docs
  *
- * @param stream*|Array[stream*] streams to fuse
+ * @param [stream config]* streams to fuse
  * @param {Object} [options]
  */
 function Fusa( /* **streams, [options] */ ) {
@@ -24,30 +24,27 @@ function Fusa( /* **streams, [options] */ ) {
     var args = _.flatten(arguments);
     var streams = _.filter(args, "stream");
     var options = _.difference(args, streams)[0];
-    options = _.extend({
+    this.options = _.extend({
         objectMode: true,
         bufferLength: 1000,
-        buffer: 2
+        buffer: 0
     }, options);
 
-    TransformStream.call(this, options);
+    TransformStream.call(this, {
+        objectMode: this.options.objectMode
+    });
 
-    if (options.transform) {
-        this.transform = options.transform;
+    if (_.isFunction(this.options.transform)) {
+        this.transform = this.options.transform;
     }
 
     this._streams = [];
     this._closed = 0;
-    this.bufferLength = +options.bufferLength;
-    this.bufferWindow = +options.buffer;
-    this._maxRechecks = options.maxRechecks != null ? +options.maxRechecks : this.bufferWindow;
 
     assert(_.any(streams, "check"), "This stream will never emit data.\n" +
         "Ensure a `check` bool is set on one of the streams");
 
-    for (var index = 0; index < streams.length; index++) {
-        this.addStream(streams[index]);
-    }
+    _.each(streams, this.addStream, this);
 
     _.defer(function transposerWarning(fusa) {
         if (fusa.transform === Fusa.prototype.transform) {
@@ -69,16 +66,26 @@ Fusa.prototype.addStream = function(stream) {
         stream: stream.stream,
         getter: getter,
         // Circular buffer to store stream contents as we receive them
-        // Used to match old items
-        buffer: new CBuffer(this.bufferLength),
+        // Used to match old items and compute buffered windows
+        buffer: new CBuffer(_.result(stream, "bufferLength", this.options.bufferLength)),
+        bufferLeft: _.result(stream, "bufferLeft", this.options.buffer),
+        // + 1 to account for the current index
+        bufferRight: _.result(stream, "bufferRight", this.options.buffer) + 1,
         comparitor: function(a, b) {
             // >= so equal items are included in the window
-            return a >= getter(b) ? 1 : -1;
+            var computed = getter(b);
+            // if (a == computed) console.log(a, b);
+            return a > computed ? 1 : computed > a ? -1 : 0;
         },
         pendingQueue: []
     };
     var self = this;
     var thisIndex = this._streams.push(context) - 1;
+
+    _.defaults(context, {
+        maxRechecks: _.result(this.options, "maxRechecks", (context.bufferLeft + context.bufferRight) * 2)
+    });
+
     function onFlushed() {
         // remove from _streams? that will lose data... Still thinking about how to handle
         if (++self._closed >= self._streams.length) {
@@ -92,18 +99,21 @@ Fusa.prototype.addStream = function(stream) {
         context.check = function check(data, recheckAttempts) {
             // will be a multi dimensional array:
             //  [[stream1b4, stream1aft], [stream2b4, stream2aft], [watchedstream]]
-            var buffer = self.bufferWindow;
             var index = 0, length = self._streams.length;
             var streamData = Array(length);
+            var computedVal = context.getter(data);
             for (; index < length; index++) {
                 if (index === thisIndex) continue;
                 var currentStream = self._streams[index];
-                // Could avoid looking up if it is obviously out of bounds
-                var sidx = currentStream.buffer.sortedIndex(context.getter(data), currentStream.comparitor);
+                
+                // Compute the appropriate index of the data via comparitor
+                // @TODO Could avoid looking up if it is obviously out of bounds
+                var sidx = currentStream.buffer.sortedIndex(computedVal, currentStream.comparitor);
 
                 // outside of the buffer range. Check again some other time
-                if (sidx < buffer || currentStream.buffer.size + 1 < sidx + buffer) {
-                    if (recheckAttempts < self._maxRechecks) {
+                if (sidx < currentStream.bufferLeft ||
+                    currentStream.buffer.size < sidx + currentStream.bufferRight) {
+                    if (recheckAttempts < currentStream.maxRechecks) {
                         currentStream.pendingQueue.push({
                             context: context,
                             data: data,
@@ -112,7 +122,9 @@ Fusa.prototype.addStream = function(stream) {
                     }
                     return;
                 }
-                streamData[index] = currentStream.buffer.slice(sidx - buffer, sidx + buffer - 1);
+                // Circular slice to get the window
+                streamData[index] = currentStream.buffer.slice(sidx - currentStream.bufferLeft,
+                                                                sidx + currentStream.bufferRight);
             }
             streamData[thisIndex] = [data];
             self.transform(streamData);
@@ -147,21 +159,11 @@ Fusa.prototype.addStream = function(stream) {
  * Supports streams that produce Objects and Arrays
  */
 Fusa.prototype.transform = function baseTransposer(streamData) {
-    var window = this.bufferWindow;
-    this.push(_.map(streamData, function(data) {
-        return data[Math.min(data.length, window) - 1];
+    var streams = this._streams;
+    this.push(_.map(streamData, function(data, index) {
+        return data[Math.min(data.length - 1, streams[index].bufferLeft)];
     }));
 };
-
-// Fusa.prototype.resume = function() {
-//     _.chain(this._streams).pluck("stream").invoke("resume");
-//     return TransformStream.prototype.resume.call(this);
-// };
-
-// Fusa.prototype.pause = function() {
-//     _.chain(this._streams).pluck("stream").invoke("pause");
-//     return TransformStream.prototype.pause.call(this);
-// };
 
 // Defer temporarily in case theres about to be something written
 // Docs claim this shouldn't be necessary (http://nodejs.org/api/stream.html#stream_events_finish_and_end)
@@ -171,9 +173,10 @@ function endAfterDeque(stream) {
     if (stream._readableState.buffer.length) {
         _.defer(endAfterDeque, stream);
     } else {
-        stream._streams = null;
-        return TransformStream.prototype.end.call(stream);
+        stream._streams = stream.options = null;
+        TransformStream.prototype.end.call(stream);
     }
+    return stream;
 }
 
 Fusa.prototype.end = function() {

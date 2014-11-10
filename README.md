@@ -113,7 +113,41 @@ fused.transform = function(streamData) {
   // can push as many times as desired but only one item per push
 };
 
-fused.on("data", function(fusedData) {
-  fusionTopic.publish(fusedData);
-});
+// Pipe the live data out
+fused.pipe(fusionTopic.toStream());
+```
+
+#### Post processing stream fusion example
+
+For post processing, it's important to set a large `bufferLength` and high `maxRetries` value in order to prevent losing data. Otherwise the API remains the same :)
+
+```js
+var fs = require("fs");
+var http = require("http");
+var csv = require("csv-stream");
+var Fusion = require("stream-fusion");
+
+var marketStream = fs.readFile("../transactions.log").pipe(csv);
+var exchangeRateStream = http.get(/* exchange rate service */).pipe(csv)
+
+var fused = new Fusion(
+  // Use a large buffer so we don't lose any transactions
+  {stream: marketStream, key: "timestamp", check: true, bufferLength: 10e5, maxRetries: 10e3, buffer: 1},
+  {stream: exchangeRateStream, key: function(row) {
+    // for instance
+    return new Date(row.year, row.month, row.day, row.hour, row.minute);
+  }, check: false, bufferLength: 10e4, bufferLeft: 1, bufferRight: 1}
+);
+
+fused.transform = function(window) {
+  var marketItem = window[0][0];
+  var exchangeData = window[1];
+
+  // Do a IDW calculation or something to match the data to the time stamp of the transaction
+  var computed = f();
+
+  this.push(computed);
+}
+
+fused.pipe(/* wherever*/ );
 ```

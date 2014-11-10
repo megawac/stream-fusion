@@ -1,3 +1,5 @@
+"use strict";
+
 var test = require("prova");
 var Fusa = require("..");
 var _ = require("underscore");
@@ -6,12 +8,11 @@ var nextItem = require("./utils").nextItem;
 var pipeItemsAtFreq = require("./utils").pipeItemsAtFreq;
 
 test("fusion of streams with a set fixed window", function(t) {
-    t.plan(2);
+    t.plan(1);
 
-    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8, 11, 13, 14, 17, 20, 22,
-        24, 27, 31
-    ], nextItem), 140);
-    var y = pipeItemsAtFreq(_.map(_.range(0, 20, 2), nextItem), 135);
+    var xitems = [1, 2, 3, 5, 6, 8, 11, 13, 14, 17, 20, 22, 24, 27, 31];
+    var x = pipeItemsAtFreq(_.map(xitems, nextItem), 30);
+    var y = pipeItemsAtFreq(_.map(_.range(0, 20, 2), nextItem), 20);
 
     var mixed = new Fusa({
         stream: x,
@@ -21,7 +22,7 @@ test("fusion of streams with a set fixed window", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 3,
+        buffer: 2,
         bufferLength: 20
     });
 
@@ -30,15 +31,16 @@ test("fusion of streams with a set fixed window", function(t) {
         data.push(streams);
     });
     mixed.on("finish", function() {
-        t.equal(data.length, 6);
         t.deepEqual(data, [
-            [nextItem(5), nextItem(4)],
+            [nextItem(3), nextItem(4)],
+            [nextItem(5), nextItem(6)],
             [nextItem(6), nextItem(6)],
             [nextItem(8), nextItem(8)],
-            [nextItem(11), nextItem(10)],
-            [nextItem(13), nextItem(12)],
+            [nextItem(11), nextItem(12)],
+            [nextItem(13), nextItem(14)],
             [nextItem(14), nextItem(14)]
         ]);
+
         t.end();
     });
 });
@@ -46,8 +48,8 @@ test("fusion of streams with a set fixed window", function(t) {
 test("transform with a fixed window", function(t) {
     t.plan(1);
 
-    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
-    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 135);
+    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 30);
+    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 20);
 
     var mixed = new Fusa({
         stream: x,
@@ -57,7 +59,7 @@ test("transform with a fixed window", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 3,
+        buffer: 2,
         bufferLength: 20
     });
 
@@ -73,20 +75,23 @@ test("transform with a fixed window", function(t) {
     mixed.on("data", function() {});
     mixed.on("finish", function() {
         t.deepEqual(data, [
-            [nextItem(5), nextItem(8)],
+            [nextItem(3), nextItem(8)],
+            [nextItem(5), nextItem(10)],
             [nextItem(6), nextItem(10)],
             [nextItem(8), nextItem(12)]
         ]);
+
         t.end();
     });
+
 });
 
 
-test("transform with a fixed window of 4", function(t) {
+test("transform with a buffer window of 3", function(t) {
     t.plan(1);
 
-    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
-    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 135);
+    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 30);
+    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 20);
 
     var mixed = new Fusa({
         stream: x,
@@ -96,7 +101,7 @@ test("transform with a fixed window of 4", function(t) {
         stream: y,
         key: "timestamp"
     }, {
-        buffer: 4,
+        buffer: 3,
         bufferLength: 30
     });
 
@@ -110,20 +115,60 @@ test("transform with a fixed window of 4", function(t) {
     mixed.on("data", function() {});
     mixed.on("finish", function() {
         t.deepEqual(data, [
-            [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},
-            {"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}],
-            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},
-            {"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60},{"data":14,"timestamp":70}]
+            [nextItem(0),nextItem(2),nextItem(4),nextItem(6),nextItem(8),nextItem(10),nextItem(12)],
+            [nextItem(0),nextItem(2),nextItem(4),nextItem(6),nextItem(8),nextItem(10),nextItem(12)],
+            [nextItem(2),nextItem(4),nextItem(6),nextItem(8),nextItem(10),nextItem(12),nextItem(14)]
         ]);
+
         t.end();
     });
 });
 
-test("transform with a fixed window of 2", function(t) {
+test("transform with a buffer window of 1", function(t) {
     t.plan(1);
 
-    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
-    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 135);
+    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 30);
+    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 20);
+
+    var mixed = new Fusa({
+        stream: x,
+        key: "timestamp",
+        check: true
+    }, {
+        stream: y,
+        key: "timestamp"
+    }, {
+        buffer: 1,
+        bufferLength: 30
+    });
+
+    var data = [];
+    // do something weird/stupid
+    mixed.transform = function(streams) {
+        data.push(streams[1]);
+        this.push(data[data.length - 1]);
+    };
+
+    mixed.on("data", function() {});
+    mixed.on("finish", function() {
+        t.deepEqual(data, [
+            [nextItem(0), nextItem(2), nextItem(4)] ,
+            [nextItem(0), nextItem(2), nextItem(4)] ,
+            [nextItem(2), nextItem(4), nextItem(6)] ,
+            [nextItem(4), nextItem(6), nextItem(8)] ,
+            [nextItem(4), nextItem(6), nextItem(8)] ,
+            [nextItem(6), nextItem(8), nextItem(10)] 
+        ]);
+
+        t.end();
+    });
+});
+
+test("transform with a buffer window of 2", function(t) {
+    t.plan(1);
+
+    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 30);
+    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 20);
 
     var mixed = new Fusa({
         stream: x,
@@ -147,47 +192,10 @@ test("transform with a fixed window of 2", function(t) {
     mixed.on("data", function() {});
     mixed.on("finish", function() {
         t.deepEqual(data, [
-            [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20}],
-            [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20}],
-            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30}],
-            [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
-            [{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}]
-        ]);
-        t.end();
-    });
-});
-
-test("transform with a fixed window of 3", function(t) {
-    t.plan(1);
-
-    var x = pipeItemsAtFreq(_.map([1, 2, 3, 5, 6, 8], nextItem), 140);
-    var y = pipeItemsAtFreq(_.map(_.range(0, 16, 2), nextItem), 135);
-
-    var mixed = new Fusa({
-        stream: x,
-        key: "timestamp",
-        check: true
-    }, {
-        stream: y,
-        key: "timestamp"
-    }, {
-        buffer: 3,
-        bufferLength: 30
-    });
-
-    var data = [];
-    // do something weird/stupid
-    mixed.transform = function(streams) {
-        data.push(streams[1]);
-        this.push(data[data.length - 1]);
-    };
-
-    mixed.on("data", function() {});
-    mixed.on("finish", function() {
-        t.deepEqual(data, [
-            [{"data":0,"timestamp":0},{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40}],
-            [{"data":2,"timestamp":10},{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50}],
-            [{"data":4,"timestamp":20},{"data":6,"timestamp":30},{"data":8,"timestamp":40},{"data":10,"timestamp":50},{"data":12,"timestamp":60}]
+            [nextItem(0), nextItem(2), nextItem(4), nextItem(6), nextItem(8)],
+            [nextItem(2), nextItem(4), nextItem(6), nextItem(8), nextItem(10)],
+            [nextItem(2), nextItem(4), nextItem(6), nextItem(8), nextItem(10)],
+            [nextItem(4), nextItem(6), nextItem(8), nextItem(10), nextItem(12)] 
         ]);
         t.end();
     });

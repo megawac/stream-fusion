@@ -1,3 +1,5 @@
+"use strict";
+
 var test = require("prova");
 var Fusa = require("..");
 var _ = require("underscore");
@@ -30,7 +32,7 @@ test("basic (out of sync) direct fusion", function(t) {
         },
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -38,7 +40,7 @@ test("basic (out of sync) direct fusion", function(t) {
         data.push(streams);
     });
     mixed.on("finish", function() {
-        t.equal(data.length, 7, "Called on every item");
+        t.equal(data.length, 5, "Called on every item");
         t.deepEqual(xtimestamps, [], "Reads x entire stream");
         t.deepEqual(ytimestamps, [], "Reads y entire stream");
         t.end();
@@ -46,7 +48,7 @@ test("basic (out of sync) direct fusion", function(t) {
 });
 
 test("transpose on window length 1", function(t) {
-    t.plan(8);
+    t.plan(6);
 
     var x = hl(_.times(5, nextItem));
     var y = pipeItemsAtFreq(_.times(7, nextItem), 20);
@@ -59,7 +61,7 @@ test("transpose on window length 1", function(t) {
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -76,10 +78,9 @@ test("transpose on window length 1", function(t) {
             [[nextItem(1)], [nextItem(1)]],
             [[nextItem(2)], [nextItem(2)]],
             [[nextItem(3)], [nextItem(3)]],
-            [[nextItem(4)], [nextItem(4)]],
-            [[nextItem(4)], [nextItem(5)]],
-            [[nextItem(4)], [nextItem(6)]]
+            [[nextItem(4)], [nextItem(4)]]
         ]);
+
         t.end();
     });
 });
@@ -98,7 +99,7 @@ test("not publishing in the transform does not publish the value to the stream",
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
@@ -136,7 +137,7 @@ test("can publish multiple items", function(t) {
         key: "timestamp",
         check: true
     }, {
-        buffer: 1
+        buffer: 0
     });
 
     var data = [];
