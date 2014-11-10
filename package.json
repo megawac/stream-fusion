@@ -4,8 +4,8 @@
   "description": "Fuse multiple streams together based on some field and a transformation function",
   "main": "fusion.js",
   "dependencies": {
-    "CBuffer": "git+https://github.com/megawac/cbuffer#fusion",
-    "underscore": "git+https://github.com/jashkenas/underscore",
+    "CBuffer": "megawac/cbuffer#fusion",
+    "underscore": "jashkenas/underscore",
     "logging": "~2.0.21"
   },
   "devDependencies": {
