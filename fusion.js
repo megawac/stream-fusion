@@ -73,7 +73,9 @@ Fusa.prototype.addStream = function(stream) {
         bufferRight: _.result(stream, "bufferRight", this.options.buffer),
         comparitor: function(a, b) {
             // >= so equal items are included in the window
-            return a >= getter(b) ? 1 : -1;
+            var computed = getter(b);
+            // if (a == computed) console.log(a, b);
+            return a > computed ? 1 : computed > a ? -1 : 0;
         },
         pendingQueue: []
     };
