@@ -27,14 +27,14 @@ function Fusa( /* **streams, [options] */ ) {
     this.options = _.extend({
         objectMode: true,
         bufferLength: 1000,
-        buffer: 2
+        buffer: 0
     }, options);
 
     TransformStream.call(this, {
         objectMode: this.options.objectMode
     });
 
-    if (options.transform) {
+    if (_.isFunction(this.options.transform)) {
         this.transform = this.options.transform;
     }
 
@@ -68,11 +68,14 @@ Fusa.prototype.addStream = function(stream) {
         // Circular buffer to store stream contents as we receive them
         // Used to match old items and compute buffered windows
         buffer: new CBuffer(_.result(stream, "bufferLength", this.options.bufferLength)),
-        bufferLeft: _.result(stream, "bufferLeft", this.options.buffer),
-        bufferRight: _.result(stream, "bufferRight", this.options.buffer - 1),
+        // + 1 to account for the current index
+        bufferLeft: _.result(stream, "bufferLeft", this.options.buffer) + 1,
+        bufferRight: _.result(stream, "bufferRight", this.options.buffer),
         comparitor: function(a, b) {
             // >= so equal items are included in the window
-            return a >= getter(b) ? 1 : -1;
+            var computed = getter(b);
+            // if (a == computed) console.log(a, b);
+            return a > computed ? 1 : computed > a ? -1 : 0;
         },
         pendingQueue: []
     };
@@ -156,9 +159,9 @@ Fusa.prototype.addStream = function(stream) {
  * Supports streams that produce Objects and Arrays
  */
 Fusa.prototype.transform = function baseTransposer(streamData) {
-    var window = this.options.buffer;
-    this.push(_.map(streamData, function(data) {
-        return data[Math.min(data.length, window) - 1];
+    var streams = this._streams;
+    this.push(_.map(streamData, function(data, index) {
+        return data[Math.min(data.length, streams[index].bufferLeft) - 1];
     }));
 };
 
