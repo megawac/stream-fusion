@@ -1,11 +1,7 @@
 Stream-Fusion [![](https://magnum.travis-ci.com/megawac/stream-fusion.svg?token=oSwrxUEG4V38qpMqB1xp)](https://magnum.travis-ci.com/megawac/stream-fusion)
 ==========
-
-Relationally join streams.
-
-## Use case
-
-[Sensor fusion](http://en.wikipedia.org/wiki/Sensor_fusion) - combining multiple streams of timestamped sensor data.
+Relationally join streams based on some computated, comparable (but not necessarily equal) `key` (e.g. a time stamp). For instance, this is useful for [sensor fusion](http://en.wikipedia.org/wiki/Sensor_fusion) - combining multiple streams of timestamped sensor data.
+This project was developed for [Clearpath Robotics](http://www.clearpathrobotics.com/).
 
 Terrible documentation incoming...
 
@@ -18,8 +14,13 @@ Where a stream is an object such that
 ```js
 {
   stream: /* a Node.js compatiable stream */
-  key: /* how to compare a stream to another stream (should return a integer or string). See http://underscorejs.org/#iteratee */
+  key: /* how to compare a stream to another stream (should return a integer or string). See http://lodashjs.org/#iteratee */
   check: /* [default=false] whether the fusion stream should (try to) emit data whenever this stream emits data */
+  bufferLeft: [default=options.buffer] how many items to the left of the current item to include in the window
+  bufferRight: [default=options.buffer] how many items to the right of the current item to include in the window
+  // Note if bufferLeft and bufferRight is unset we'll use options.buffer and the closest value will be in the middle
+  maxRechecks: /* [default=options.buffer * 2] The num of times to fit any piece of data in the window (see options.buffer) */
+  bufferLength: /* [default=options.bufferLength] how much historical data should be kept. If streams are in sync you should definetely set this to a low value */
 }
 ```
 
@@ -28,13 +29,13 @@ And options is of the form
 ```js
 {
   objectMode: /* [default=true] should the stream be in objectMode */
-  buffer: /* [default=2] the window to the left and right closest to the value being checked (i.e. if buffer is 2 then transform will be called with `[valueBelowCheck, valueAboveCheck]`). Note: values will be buffered internally until there is enough info to the left and right of the window. Implementation note: the value in the middle will always be `<=` the value being checked */
-  bufferLength: /* [default=1000] how much historical data should be kept. If streams are in sync you should definetely set this to a low value */
-  maxRechecks: /* [default=options.buffer] The num of times to fit any piece of data in the window (see options.buffer) */
+  buffer: /* [default=2] the window to the left and right closest to the value being checked (i.e. if buffer is 1 then transform will be called with `[valueBelowCheck, valueAboveCheck]`). Note: values will be buffered internally until there is enough info to the left and right of the window. Implementation note: the value in the middle will always be `<=` the value being checked */
+  bufferLength: /* [default=1000] useful for post processing */
+  maxRechecks: see above
 }
 ```
 
-You can create a `transform` to decide how the fused stream should emit data. The transform will be called with (in the case that stream 1 is being checked) `[[stream0Window], [valueBeingChecked], [stream2Window]]`. Where window refers to an array of size `options.buffer * 2 - 1` of the values `buffer` len to the left and right of the closest value in each stream. Call `this.push` in `transform` to publish data
+You can create a `transform` to decide how the fused stream should emit data. The transform will be called with (in the case that stream 1 is being checked) `[[stream0Window], [valueBeingChecked], [stream2Window]]`. Where window for a given stream refers to an array of size `leftBuffer + rightBuffer + 1` of the values, (obviously `bufferLeft` len to the left and `bufferRight` items to the right of the closest value in each stream. Call `this.push` in `transform` to publish data
 
 ```js
 fusionStream.transform = function(streams) {
@@ -75,39 +76,55 @@ I spent a good amount of time developing an optimal algorithm for processing thi
 
 ## Example <sub>(see tests for more examples)</sub>
 
-Using a custom fork of [roslibjs](https://github.com/RobotWebTools/roslibjs)
+Using [roslibjs](https://github.com/RobotWebTools/roslibjs) and [node-serialport](https://github.com/voodootikigod/node-serialport) we can create fusion windows based on timestamps (in different time formats).
 
 ```js
 var Ros = require("roslibjs/src/core/Ros");
 var ros = new Ros("connect to rosbridge");
+var serialport = require("serialport");
+var SerialPort = serialport.SerialPort;
 
-var mruStream = ros.Topic({
-  name: "/kf/mru"
-});
+var through = require("through2")
+
+var accelerometerStream = ros.Topic({
+  name: "/accelerometer/data"
+}).toStream();
 
 var gpsStream = ros.Topic({
-  name: "/kf/gps"
-});
+  name: "/navsat/fix"
+}).toStream();
 
-var sonarStream = ros.Topic({
-  name: "/kf/sonar"
-});
-
-var fusionTopic = ros.Topic({
-  name: "/kf/sonar"
-});
+// Connect to some serial device (e.g. GPS) and pipe through nmea transform
+var compassStream = new SerialPort("/dev/tty-usbserial1", {
+  parser: serialport.parsers.raw
+})
+.pipe(require("nmea").createDefaultTransformer())
+.pipe(through.obj(function(chunk, enc, callback) {
+  chunk.timestamp = Date.now();
+  callback();
+}));
 
 var Fusion = require("stream-fusion");
 
-var fused = new Fusion({stream: mruStream, key: "timestamp"},
-                {stream: gpsStream, key: "timestamp"},
-                {stream: sonarStream, key: "timestamp", check: true},
-                {bufferLength: 50, buffer: 5});
+// Convert time in nanosecs to ms
+function headerToTimestamp(item) {
+  return item.header.stamp.secs * 10e2 + item.header.stamp.nsecs / 10e5;
+}
+
+var fused = new Fusion(
+    // inherit options
+    {stream: accelerometerStream, key: headerToStamp, bufferLength: 50},
+    // explictly set buffer sizes
+    {stream: gpsStream, key: headerToStamp, bufferLeft: 5, bufferRight: 2, bufferLength: 10},
+    {stream: compassStream, key: "timestamp", check: true},
+    // Options
+    {bufferLength: 50, buffer: 2}
+);
 
 fused.transform = function(streamData) {
-  var mruWindow = streamData[0];
+  var accelerometerWindow = streamData[0];
   var gpsWindow = streamData[1];
-  var sonarValue = streamData[2][0];
+  var compassValue = streamData[2][0];
 
   this.push( /* computed value in window */ );
   // can push as many times as desired but only one item per push

@@ -1,6 +1,6 @@
 {
   "name": "stream-fusion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fuse multiple streams together based on some field and a transformation function",
   "main": "fusion.js",
   "dependencies": {
