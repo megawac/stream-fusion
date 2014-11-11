@@ -30,16 +30,13 @@ function Fusa( /* **streams, [options] */ ) {
         buffer: 0
     }, options);
 
-    TransformStream.call(this, {
-        objectMode: this.options.objectMode
-    });
-
     if (_.isFunction(this.options.transform)) {
         this.transform = this.options.transform;
     }
 
     this._streams = [];
     this._closed = 0;
+    TransformStream.call(this, _.pick(this.options, "objectMode"));
 
     assert(_.any(streams, "check"), "This stream will never emit data.\n" +
         "Ensure a `check` bool is set on one of the streams");
@@ -77,7 +74,8 @@ Fusa.prototype.addStream = function(stream) {
             // if (a == computed) console.log(a, b);
             return a > computed ? 1 : computed > a ? -1 : 0;
         },
-        pendingQueue: []
+        pendingQueue: [],
+        maxRechecks: stream.maxRechecks
     };
     var self = this;
     var thisIndex = this._streams.push(context) - 1;
