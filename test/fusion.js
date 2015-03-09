@@ -2,7 +2,7 @@
 
 var test = require("prova");
 var Fusa = require("..");
-var _ = require("underscore");
+var _ = require("lodash");
 var hl = require("highland");
 
 var nextItem = require("./utils").nextItem;

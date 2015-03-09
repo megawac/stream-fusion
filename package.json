@@ -5,7 +5,7 @@
   "main": "fusion.js",
   "dependencies": {
     "cbuffer-fusion": "~1.0.0",
-    "lodash": "jashkenas/underscore",
+    "lodash": "^3.1.0",
     "logging": "~2.0.21"
   },
   "devDependencies": {

@@ -9,9 +9,7 @@ var assert = require("assert");
 //     - https://github.com/trevnorris/cbuffer/pull/15
 //     - https://github.com/trevnorris/cbuffer/pull/17
 var CBuffer = require("cbuffer-fusion");
-// @TODO switch to offical underscore/lodash whenever Jeremy or
-// JDD decide to tag a release
-var _ = require("underscore");
+var _ = require("lodash");
 var logging = require("logging").from("stream-fusion");
 
 /**

@@ -1,6 +1,6 @@
 var test = require('prova');
 var Fusa = require("..");
-var _ = require("underscore");
+var _ = require("lodash");
 
 var nextItem = require("./utils").nextItem;
 var pipeItemsAtFreq = require("./utils").pipeItemsAtFreq;
