@@ -1,4 +1,4 @@
-Stream-Fusion [![](https://magnum.travis-ci.com/megawac/stream-fusion.svg?token=oSwrxUEG4V38qpMqB1xp)](https://magnum.travis-ci.com/megawac/stream-fusion)
+Stream-Fusion [![](https://api.travis-ci.org/megawac/stream-fusion.svg)](https://travis-ci.org/megawac/stream-fusion)
 ==========
 Relationally join streams based on some computated, comparable (but not necessarily equal) `key` (e.g. a time stamp). For instance, this is useful for [sensor fusion](http://en.wikipedia.org/wiki/Sensor_fusion) - combining multiple streams of timestamped sensor data.
 This project was developed for [Clearpath Robotics](http://www.clearpathrobotics.com/).
